@@ -1,0 +1,143 @@
+# Top-tier pre-commit configuration for a Python project (code style, quality, security, docs)
+# Install: pip install pre-commit && pre-commit install
+# Update hooks: pre-commit autoupdate
+# Run all: pre-commit run --all-files
+
+minimum_pre_commit_version: "3.5.0"
+
+default_language_version:
+  python: python3.11
+
+exclude: |
+  (?x)(
+    ^dist/|
+    ^build/|
+    ^\.venv/|
+    ^\.mypy_cache/|
+    ^\.ruff_cache/|
+    ^\.pytest_cache/|
+    ^coverage/|
+    ^docs/_build/
+  )
+
+repos:
+  # Core hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: trailing-whitespace
+
+  # YAML lint (stricter than basic check-yaml)
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        files: \.ya?ml$
+        args: ["-d", "{extends: default, rules: {line-length: {max: 140}}}"]
+
+  # Sort & normalize imports (via Ruff or isort; here Ruff covers it)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.8
+    hooks:
+      - id: ruff
+        name: Ruff Lint
+        args: ["--fix"]
+      - id: ruff-format
+        name: Ruff Format
+
+  # Type checking
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.2
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies:
+  #         - types-requests
+  #         - types-PyYAML
+  #       args:
+  #         - --strict
+  #         - --show-error-codes
+  #         - --pretty
+
+  # Security scanning (Bandit)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        name: Bandit Security Scan
+        args: ["-ll", "-iii"]
+        files: ^src/|^app/|\.py$
+
+  # Secrets detection
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.5.0
+  #   hooks:
+  #     - id: detect-secrets
+
+  # Dependency vulnerability / license check (pip-audit)
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.7.3
+    hooks:
+      - id: pip-audit
+        name: pip-audit (dependency vulnerabilities)
+        args: ["--strict"]
+
+  # Markdown & prose
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: ["--disable", "MD013"] # Allow long lines in tables
+
+  # Prettier for JSON / Markdown / YAML (non-Python formatting)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: \.(json|ya?ml|md|mdx)$
+
+  # Dockerfile lint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+
+  # Commit message conventional style (optional, activate if desired)
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.28.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # Local hooks (custom project-specific checks)
+  - repo: local
+    hooks:
+      - id: forbid-print
+        name: Forbid print statements (prefer logging)
+        entry: bash -c "grep -R --line-number -E '^[^#]*print\\(' src || true"
+        language: system
+        types: [python]
+        pass_filenames: false
+        additional_dependencies: []
+      - id: check-poetry-lock
+        name: Ensure pyproject.toml and poetry.lock in sync
+        entry: bash -c "poetry lock --check"
+        language: system
+        files: ^pyproject\.toml$
+      - id: ensure-license-header
+        name: Ensure license header in Python files
+        entry: python scripts/check_license_header.py
+        language: system
+        files: ^(src|app)/.*\.py$
+# Suggest creating scripts/check_license_header.py and .secrets.baseline if using those hooks.
+# To skip a hook temporarily: git commit -m "msg" -o path --no-verify (use sparingly).

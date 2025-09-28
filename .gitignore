@@ -1,0 +1,17 @@
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+.ipynb_checkpoints/
+.vscode/
+.env
+.venv
+venv/
+env/
+ENV/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.log
+node_modules/
