@@ -1,31 +1,40 @@
 # import plotly.express as px
 
 # import parsing as ps
+from turtle import pd
 import matplotlib.pyplot as plt
 from prophet import Prophet
 from utils import DataLoader, Modeler
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import TimeSeriesSplit
+import pandas as pd
+import numpy as np
 
+def prophet_error(model : Modeler, df: pd.DataFrame) -> float:
+    mean_error = 0
+    splits = 5
+    tscv = TimeSeriesSplit(n_splits=splits)
+    df.dropna(inplace=True)
+    for i, (train_index, test_index) in enumerate(tscv.split(df)):
+        print(f"Processing fold {i+1}/{splits}")
+        train, test = df.iloc[train_index], df.iloc[test_index]
 
-# def prophet_error(df):
-#     mean_error = 0
-#     splits = 5
-#     tscv = TimeSeriesSplit(n_splits=splits)
-
-#     for train_index, test_index in tscv.split(df):
-#         train, test = df.iloc[train_index], df.iloc[test_index]
-#         predictions, _ = modelling(train, test)
-#         mean_error += mean_absolute_error(test["y"], predictions["yhat"])
-
-#     mean_error /= splits
-#     print(f"The mean error: {mean_error}")
-#     return mean_error
+        predictions = model.fit(train, test)
+        
+        mean_error += mean_absolute_error(test["y"], predictions["yhat"])
+        
+    mean_error /= splits
+    return mean_error
 
 
 df = DataLoader.load_aq_data(station_code="SlCzestoArmK")
-model = Modeler( )
-model.fit(df)
-model.plot_fitting()
-plt.show()
+model = Modeler(n_changepoints=4)
+mean_error = prophet_error(model, df)
+print(f"Mean Absolute Error: {mean_error:.2f}")
+
+# model.fit(df)
+# model.plot_fitting()
+# plt.show()
 
 # use custom holidays
 # evaluate performance
