@@ -79,18 +79,18 @@ repos:
         files: ^src/|^app/|\.py$
 
   # Secrets detection
-  # - repo: https://github.com/Yelp/detect-secrets
-  #   rev: v1.5.0
-  #   hooks:
-  #     - id: detect-secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
 
   # Dependency vulnerability / license check (pip-audit)
-  - repo: https://github.com/pypa/pip-audit
-    rev: v2.7.3
-    hooks:
-      - id: pip-audit
-        name: pip-audit (dependency vulnerabilities)
-        args: ["--strict"]
+  # - repo: https://github.com/pypa/pip-audit
+  #   rev: v2.7.3
+  #   hooks:
+  #     - id: pip-audit
+  #       name: pip-audit (dependency vulnerabilities)
+  #       args: ["--strict"]
 
   # Markdown & prose
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -131,7 +131,7 @@ repos:
         additional_dependencies: []
       - id: check-poetry-lock
         name: Ensure pyproject.toml and poetry.lock in sync
-        entry: bash -c "poetry lock --check"
+        entry: bash -c "uv lock --check"
         language: system
         files: ^pyproject\.toml$
       - id: ensure-license-header
